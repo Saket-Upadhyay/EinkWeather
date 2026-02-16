@@ -226,7 +226,7 @@ fun WeatherDisplay(weatherResponse: WeatherResponse) {
             imageLoader = imageLoader,
             contentDescription = null,
             modifier = Modifier.size(300.dp),
-//            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.Black)
+            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.Black)
         )
         Spacer(modifier = Modifier.height(10.dp))
         Text(
