@@ -67,6 +67,9 @@ fun WeatherScreen(modifier: Modifier = Modifier, viewModel: MainViewModel = view
     var zipCode by remember {
         mutableStateOf(sharedPreferences.getString("last_zip_code", "22903") ?: "22903")
     }
+    var useV2Icons by remember {
+        mutableStateOf(sharedPreferences.getBoolean("use_v2_icons", false))
+    }
     val apiKey = BuildConfig.OPENWEATHER_API_KEY
 
     var showAboutDialog by remember { mutableStateOf(false) }
@@ -106,6 +109,22 @@ fun WeatherScreen(modifier: Modifier = Modifier, viewModel: MainViewModel = view
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Use V2 Icons", modifier = Modifier.weight(1f))
+                        Switch(
+                            checked = useV2Icons,
+                            onCheckedChange = {
+                                useV2Icons = it
+                                sharedPreferences.edit { putBoolean("use_v2_icons", it) }
+                            }
+                        )
+                    }
 
                     Button(
                         onClick = {
@@ -191,7 +210,7 @@ fun WeatherScreen(modifier: Modifier = Modifier, viewModel: MainViewModel = view
                     }
 
                     is WeatherUiState.Success -> {
-                        WeatherDisplay(weatherResponse = state.weather)
+                        WeatherDisplay(weatherResponse = state.weather, useV2Icons = useV2Icons)
                     }
 
                     is WeatherUiState.Error -> {
@@ -208,8 +227,13 @@ fun WeatherScreen(modifier: Modifier = Modifier, viewModel: MainViewModel = view
 }
 
 @Composable
-fun WeatherDisplay(weatherResponse: WeatherResponse) {
-    val weatherIconPath = getWeatherIconPath(weatherResponse.weather.firstOrNull()?.icon ?: "")
+fun WeatherDisplay(weatherResponse: WeatherResponse, useV2Icons: Boolean) {
+    val weatherIconPath = if (useV2Icons) {
+        getWeatherIconPathv2(weatherResponse.weather.firstOrNull()?.icon ?: "")
+    } else {
+        getWeatherIconPath(weatherResponse.weather.firstOrNull()?.icon ?: "")
+    }
+    val assetFolder = if (useV2Icons) "weatherIconsv2" else "weatherIcons"
     val context = LocalContext.current
 
     val imageLoader = ImageLoader.Builder(context)
@@ -221,7 +245,7 @@ fun WeatherDisplay(weatherResponse: WeatherResponse) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         AsyncImage(
             model = ImageRequest.Builder(context)
-                .data("file:///android_asset/weatherIcons/$weatherIconPath")
+                .data("file:///android_asset/$assetFolder/$weatherIconPath")
                 .build(),
             imageLoader = imageLoader,
             contentDescription = null,
@@ -279,5 +303,23 @@ fun getWeatherIconPath(iconCode: String): String {
         "13d", "13n" -> "heavy_snow.svg"
         "50d", "50n" -> "haze_fog_dust_smoke.svg"
         else -> "unknown.svg"
+    }
+}
+
+fun getWeatherIconPathv2(iconCode: String): String {
+    return when (iconCode) {
+        "01d" -> "Sun.svg"
+        "01n" -> "Moon.svg"
+        "02d" -> "Cloud-Sun.svg"
+        "02n" -> "Cloud-Moon.svg"
+        "03d", "03n" -> "Cloud.svg"
+        "04d", "04n" -> "Cloud.svg"
+        "09d", "09n" -> "Cloud-Drizzle.svg"
+        "10d" -> "Cloud-Rain-Sun.svg"
+        "10n" -> "Cloud-Rain-Moon.svg"
+        "11d", "11n" -> "Cloud-Lightning.svg"
+        "13d", "13n" -> "Cloud-Snow.svg"
+        "50d", "50n" -> "Cloud-Fog.svg"
+        else -> "Cloud.svg"
     }
 }
